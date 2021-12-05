@@ -24,15 +24,16 @@ ALIEN1 = pygame.transform.scale(pygame.image.load(os.path.join('effects', 'alien
 ALIEN2 = pygame.transform.scale(pygame.image.load(os.path.join('effects', 'alien2.png')), (ALIEN_WIDTH, ALIEN_HEIGHT))
 ALIEN3 = pygame.transform.scale(pygame.image.load(os.path.join('effects', 'alien3.png')), (ALIEN_WIDTH, ALIEN_HEIGHT))
 UFO1 = pygame.transform.scale(pygame.image.load(os.path.join('effects', 'ufo1.png')), (ALIEN_WIDTH, ALIEN_HEIGHT))
+UFO2 = pygame.transform.scale(pygame.image.load(os.path.join('effects', 'ufo2.png')), (ALIEN_WIDTH, ALIEN_HEIGHT))
 
 EXPLOSIONS = []
 for i in range(16):
   EXPLOSIONS.append(pygame.transform.scale(pygame.image.load(os.path.join('effects', 'ex%i.png' %(i+1))), (ALIEN_WIDTH, ALIEN_HEIGHT)))
 
-
 # Sounds
 SHIP_FIRE_SOUND = pygame.mixer.Sound(os.path.join('effects', 'laser1.ogg'))
 EXPLOSION1_SOUND = pygame.mixer.Sound(os.path.join('effects', 'explosion1.ogg'))
+NEW_SHIP_SOUND = pygame.mixer.Sound(os.path.join('effects', 'newship.ogg'))
 
 # Fonts
 SCORE_FONT = pygame.font.SysFont('comicsans', 20)
@@ -62,32 +63,41 @@ class EnemyInfo:
 # Global variables
 score = 0
 dead = False
-round = 1
+level = 1
+shipCnt = 1
+scoreNextShip = 500
+shieldCnt = 0
 
 def main():
-  global score, dead, round
-  ship = pygame.Rect(WIN_WIDTH/2, WIN_HEIGHT - 50, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
+  global score, dead, level, scoreNextShip, shipCnt, shieldCnt
+  firstRun = True
+  ships = []
+  for i in range(shipCnt):
+    ships.append(pygame.Rect(WIN_WIDTH/2+SPACESHIP_WIDTH*i, WIN_HEIGHT - 50, SPACESHIP_WIDTH, SPACESHIP_HEIGHT))
   shipBullets = []
   enemyBullets = []
   aliens = []
   ufos = []
   explosions = []
-  shieldCnt = 2
+  shieldCnt += 1
   shieldActive = 0
   shieldHit = 0
 
   for i in range(10):
     alien = pygame.Rect(50+i*40, 50, ALIEN_WIDTH, ALIEN_HEIGHT)
     aliens.append((alien, ALIEN1))
-    if round > 1:
+    if level > 1:
       alien = pygame.Rect(50+i*40, 90, ALIEN_WIDTH, ALIEN_HEIGHT)
       aliens.append((alien, ALIEN2))
-    if round > 2:
+    if level > 2:
       alien = pygame.Rect(50+i*40, 130, ALIEN_WIDTH, ALIEN_HEIGHT)
+      aliens.append((alien, ALIEN3))
+    if level > 3:
+      alien = pygame.Rect(50+i*40, 170, ALIEN_WIDTH, ALIEN_HEIGHT)
       aliens.append((alien, ALIEN3))
   alienMoveX = 1
 
-  if round > 1:
+  if level > 1:
     info = EnemyInfo(pygame.Rect(20, 30, ALIEN_WIDTH, ALIEN_HEIGHT), UFO1)
     ufos.append(info)
 
@@ -98,21 +108,26 @@ def main():
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         run = False
+        dead = True
 
       if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_SPACE and len(shipBullets) < 4:
-          bullet = pygame.Rect(ship.x+ship.width/2-2, ship.y-10, 4, 10)
-          shipBullets.append(bullet)
+        if event.key == pygame.K_SPACE and len(shipBullets) < 4*len(ships):
+          for ship in ships:
+            bullet = pygame.Rect(ship.x+ship.width/2-2, ship.y-10, 4, 10)
+            shipBullets.append(bullet)
           SHIP_FIRE_SOUND.play()
         if event.key == pygame.K_s and shieldCnt > 0 and shieldActive < 25:
           shieldCnt -= 1
           shieldActive = FPS*4
 
     keys_pressed = pygame.key.get_pressed()
-    if (keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]) and ship.x > 10:
-        ship.x -= 4
-    if (keys_pressed[pygame.K_RIGHT]  or keys_pressed[pygame.K_d]) and ship.x < (WIN_WIDTH - ship.width - 10):
-        ship.x += 4
+    movex = 0
+    if (keys_pressed[pygame.K_LEFT] or keys_pressed[pygame.K_a]) and ships[0].x > 10:
+      movex = -4
+    if (keys_pressed[pygame.K_RIGHT]  or keys_pressed[pygame.K_d]) and ships[-1].x < (WIN_WIDTH - ships[-1].width - 10):
+      movex = 4
+    for ship in ships:
+      ship.x += movex
 
     # Move aliens
     if len(aliens) > 0:
@@ -131,12 +146,18 @@ def main():
 
       for (a, i) in aliens:
         a.x += alienMoveX
-        if random.randint(0, 10000) < (12 - 5*len(enemyBullets)):
+        if random.randint(0, 10000) < (10+2*level - 5*len(enemyBullets)):
           enemyBullets.append(pygame.Rect(a.x+a.width/2-2, a.y+a.height, 4, 10))
-        if a.colliderect(ship):
-          EXPLOSION1_SOUND.play()
-          run = False
-          dead = True
+        for ship in ships:
+          if a.colliderect(ship):
+            EXPLOSION1_SOUND.play()
+            if len(ships) > 1:
+              ships.remove(ship)
+              EXPLOSION1_SOUND.play()
+              explosions.append((ship, 0))
+            else:
+              run = False
+              dead = True
 
     # Move UFOs
     for (info) in ufos:
@@ -149,18 +170,24 @@ def main():
         info.SetTargetP(random.randint(0, WIN_WIDTH), info.ty + random.randint(10, 30), random.randint(3,6))
       if u.y > WIN_HEIGHT:
         ufos.remove(info)
-      if u.colliderect(ship):
-        EXPLOSION1_SOUND.play()
-        if shieldActive == 0:
-          run = False
-          dead = True
-        else:
-          shieldHit = 4
-          explosions.append((info.pgr, 0))
-          ufos.remove(info)
+      for ship in ships:
+        if u.colliderect(ship):
+          EXPLOSION1_SOUND.play()
+          if shieldActive == 0:
+            if len(ships) > 1:
+              ships.remove(ship)
+              EXPLOSION1_SOUND.play()
+              explosions.append((ship, 0))
+            else:
+              run = False
+              dead = True
+          else:
+            shieldHit = 4
+            explosions.append((info.pgr, 0))
+            ufos.remove(info)
 
-      if abs(u.x-ship.x) < 10 and len(enemyBullets) < 3 and random.randint(0, 10) > 8:
-        enemyBullets.append(pygame.Rect(u.x+u.width/2-2, u.y+u.height, 4, 10))
+        if abs(u.x-ship.x) < 10 and len(enemyBullets) < 3 and random.randint(0, 10) > 8:
+          enemyBullets.append(pygame.Rect(u.x+u.width/2-2, u.y+u.height, 4, 10))
 
     # Move enemy bullets
     for b in enemyBullets:
@@ -168,15 +195,22 @@ def main():
       if b.y > WIN_HEIGHT:
         enemyBullets.remove(b)
       else:
-        if ship.colliderect(b):
-          if shieldActive == 0:
-            # Dead
-            EXPLOSION1_SOUND.play()
-            run = False
-            dead = True
-          else:
-            shieldHit = 4
+        for ship in ships:
+          if ship.colliderect(b):
+            if shieldActive == 0:
+              if len(ships) > 1:
+                ships.remove(ship)
+                EXPLOSION1_SOUND.play()
+                explosions.append((ship, 0))
+              else:
+                # Dead
+                EXPLOSION1_SOUND.play()
+                run = False
+                dead = True
+            else:
+              shieldHit = 4
             enemyBullets.remove(b)
+            break
 
     # Move ship bullets
     for b in shipBullets:
@@ -204,10 +238,10 @@ def main():
               ufos.remove(info)
               shipBullets.remove(b)
               score += 50
-              if len(ufos) < min(3, len(aliens)):
+              if len(ufos) < min(level, len(aliens)):
                 info = EnemyInfo(pygame.Rect(random.randint(20, WIN_WIDTH), 100, ALIEN_WIDTH, ALIEN_HEIGHT), UFO1)
                 ufos.append(info)
-                info = EnemyInfo(pygame.Rect(random.randint(20, WIN_WIDTH), 100, ALIEN_WIDTH, ALIEN_HEIGHT), UFO1)
+                info = EnemyInfo(pygame.Rect(random.randint(20, WIN_WIDTH), 100, ALIEN_WIDTH, ALIEN_HEIGHT), UFO2)
                 ufos.append(info)
               break
     
@@ -216,26 +250,29 @@ def main():
 
     # Update display (WIN)
     WIN.fill(BLACK)
-    score_text = SCORE_FONT.render("Score: %s   Shields %i" %(score, shieldCnt), 1, WHITE)
+    score_text = SCORE_FONT.render("Score: %s   Shields %i    Level %i" %(score, shieldCnt, level), 1, WHITE)
     WIN.blit(score_text, (20, 5))
     text = SCORE_FONT.render("FPS: %i" %(clock.get_fps()), 1, WHITE)
     WIN.blit(text, (WIN_WIDTH-text.get_width()-20, 5))
 
-    if dead:
-      WIN.blit(EXPLOSIONS[3], ship)
-    else:
-      if shieldActive > 0:
-        if shieldHit > 0:
-          pygame.draw.circle(WIN, RED, (ship.x+ship.width/2, ship.y+ship.width/2-2), ship.width/2)
-          shieldHit -= 1
-        else:
-          pygame.draw.circle(WIN, YELLOW, (ship.x+ship.width/2, ship.y+ship.width/2-2), ship.width/2)
-        shieldActive -= 1
-      if shieldActive < 30 and shieldActive%8 < 4:
-        pygame.draw.circle(WIN, BLACK, (ship.x+ship.width/2, ship.y+ship.width/2-2), ship.width/2-3)
-      WIN.blit(SPACESHIP, ship)
+    for ship in ships:
+      if dead:
+        WIN.blit(EXPLOSIONS[3], ship)
+      else:
+        if shieldActive > 0:
+          if shieldHit > 0:
+            pygame.draw.circle(WIN, RED, (ship.x+ship.width/2, ship.y+ship.width/2-2), ship.width/2)
+            shieldHit -= 1
+          else:
+            pygame.draw.circle(WIN, YELLOW, (ship.x+ship.width/2, ship.y+ship.width/2-2), ship.width/2)
+        if shieldActive < 30 and shieldActive%8 < 4:
+          pygame.draw.circle(WIN, BLACK, (ship.x+ship.width/2, ship.y+ship.width/2-2), ship.width/2-3)
+        WIN.blit(SPACESHIP, ship)
 
-    expl = []
+    if shieldActive > 0:
+      shieldActive -= 1
+
+    expl = [] # Temp list
     for (a, i) in explosions:
       WIN.blit(EXPLOSIONS[i], a)
       explosions.remove((a, i))
@@ -254,9 +291,23 @@ def main():
 
     pygame.display.update()
 
+    if score >= scoreNextShip:
+      scoreNextShip += 1000
+      NEW_SHIP_SOUND.play()
+      shieldActive += FPS/2
+      if ships[0].x < WIN_WIDTH/2:
+        ships.append(pygame.Rect(ships[-1].x+SPACESHIP_WIDTH, WIN_HEIGHT - 50, SPACESHIP_WIDTH, SPACESHIP_HEIGHT))
+      else:
+        ships.insert(0, pygame.Rect(ships[0].x+SPACESHIP_WIDTH, WIN_HEIGHT - 50, SPACESHIP_WIDTH, SPACESHIP_HEIGHT))
+    shipCnt = len(ships)
+    if firstRun:
+      pygame.time.delay(500)
+      firstRun = False
+
 while dead == False:
   main()
-  round += 1
+  pygame.time.delay(200)
+  level += 1
 
 pygame.draw.rect(WIN, (100, 100, 100), (200, 200, 200, 100))
 if dead:
