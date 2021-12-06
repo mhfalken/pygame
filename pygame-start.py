@@ -1,3 +1,5 @@
+# Standard control loop in pygame
+# Made by Michael Hansen 2021
 import pygame
 import os
 import random

@@ -1,3 +1,5 @@
+# Space invaders by Michael Hansen 2021
+# Programmed in Python pygame
 import pygame
 import os
 import random
