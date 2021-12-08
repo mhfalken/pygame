@@ -150,7 +150,7 @@ def AddNewScore(WIN, pos, score):
 
 # --------------------------------------------- #
 
-
+"""
 pygame.mixer.init()
 
 WIN_WIDTH, WIN_HEIGHT = 600, 500
@@ -158,5 +158,5 @@ WIN1 = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 
 AddNewScore(WIN1, (100, 20), random.randint(10, 2000))
 pygame.quit()
-
+"""
 
