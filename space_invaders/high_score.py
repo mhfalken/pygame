@@ -113,6 +113,8 @@ def PrintHighScoreList(WIN, pos, list):
     WIN.blit(tt, (posx+offset+2*CH_WIDTH, posy))
     posy += CH_HEIGHT
     color = (color[0]-10, color[1]+10, color[2]+10)
+  tt = HIGH_FONT.render("Programmed by Michael Hansen 2021", 1, (0, 255, 0))
+  WIN.blit(tt, (posx, posy+CH_HEIGHT))
   pygame.display.update()
 
 
@@ -148,7 +150,7 @@ def AddNewScore(WIN, pos, score):
 
 # --------------------------------------------- #
 
-"""
+
 pygame.mixer.init()
 
 WIN_WIDTH, WIN_HEIGHT = 600, 500
@@ -156,5 +158,5 @@ WIN1 = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 
 AddNewScore(WIN1, (100, 20), random.randint(10, 2000))
 pygame.quit()
-"""
+
 
