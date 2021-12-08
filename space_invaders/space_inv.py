@@ -3,6 +3,7 @@
 import pygame
 import os
 import random
+import high_score
 
 pygame.font.init()
 pygame.mixer.init()
@@ -109,8 +110,8 @@ def main():
     clock.tick(FPS)
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
-        run = False
-        dead = True
+        pygame.quit()
+        exit()
 
       if event.type == pygame.KEYDOWN:
         if event.key == pygame.K_SPACE and len(shipBullets) < 4*len(ships):
@@ -312,10 +313,7 @@ while dead == False:
   level += 1
 
 pygame.draw.rect(WIN, (100, 100, 100), (200, 200, 200, 100))
-if dead:
-  text = SCORE_FONT.render("YOU ARE DEAD", 1, RED)
-else:
-  text = SCORE_FONT.render("YOU WON", 1, YELLOW)
+text = SCORE_FONT.render("YOU ARE DEAD", 1, RED)
 WIN.blit(text, (WIN_WIDTH/2-text.get_width()/2, WIN_HEIGHT/2 - 40))
 
 text = SCORE_FONT.render("Final score: " + str(score), 1, WHITE)
@@ -323,6 +321,8 @@ WIN.blit(text, (WIN_WIDTH/2-text.get_width()/2, WIN_HEIGHT/2))
 pygame.display.update()
 
 pygame.time.delay(2000)
+
+high_score.AddNewScore(WIN, (100, 20), score)
 pygame.quit()
 
 
