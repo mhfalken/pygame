@@ -20,14 +20,15 @@ CH_HEIGHT = 32
 
 hfilename = "hsl_si.hsl"
 
-def WaitKey():
+def WaitKey(key = pygame.K_UNKNOWN):
   while True:
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
       if event.type == pygame.KEYDOWN:
-        return
+        if key == pygame.K_UNKNOWN or event.key == pygame.K_RETURN:
+          return
 
 
 def ReadHFile(filename):
@@ -60,10 +61,11 @@ def ReadLine(WIN, pos, maxlen=20):
   text = ""
   run = True
   boxmax = False
-  for event in pygame.event.get():
-    pass # Clean queue
+  BLINK_MAX = 30
+  blink = BLINK_MAX
 
   while run:
+    pygame.time.Clock().tick(30)
     for event in pygame.event.get():
       if event.type == pygame.QUIT:
         run = False # Spillet stopper
@@ -76,12 +78,12 @@ def ReadLine(WIN, pos, maxlen=20):
           continue
         if event.key >= pygame.K_a and event.key <= pygame.K_z or event.key in [32, 229, 230, 248]:  # æøå
           if not boxmax:
+            if event.key == pygame.K_SPACE and len(text) == 0:
+              continue  # Skip leading spaces
             if event.mod & pygame.KMOD_SHIFT:
               text += chr(event.key-0x20)   # a -> A
             else:
               text += chr(event.key)
-          
-        #print(str(text))
 
     # Update display (WIN)
     tt = HIGH_FONT.render(text, 1, WHITE)
@@ -92,6 +94,11 @@ def ReadLine(WIN, pos, maxlen=20):
     pygame.draw.rect(WIN, BLACK, (posx, posy, CH_WIDTH*maxlen, CH_HEIGHT))
     pygame.draw.rect(WIN, BLUE, (posx, posy, CH_WIDTH*maxlen, CH_HEIGHT), 1)
     WIN.blit(tt, (posx+1, posy))
+    if blink <= BLINK_MAX/2:
+      pygame.draw.rect(WIN, YELLOW, (posx+tt.get_width()+2, posy+CH_HEIGHT-8, 8, 3))
+    blink -= 1
+    if blink == 0:
+      blink = BLINK_MAX
     pygame.display.update()
   return text
 
@@ -115,6 +122,8 @@ def PrintHighScoreList(WIN, pos, list):
     color = (color[0]-10, color[1]+10, color[2]+10)
   tt = HIGH_FONT.render("Programmed by Michael Hansen 2021", 1, (0, 255, 0))
   WIN.blit(tt, (posx, posy+CH_HEIGHT))
+  tt = HIGH_FONT.render("Press RETURN to EXIT", 1, (255, 255, 0))
+  WIN.blit(tt, (posx+50, posy+2*CH_HEIGHT))
   pygame.display.update()
 
 
@@ -138,25 +147,27 @@ def NewScore(WIN, pos, hlist, score, maxEntries=10):
     hlist = hlist[0:maxEntries]
   WIN.fill(BLACK)
   PrintHighScoreList(WIN, pos, hlist)
-  WaitKey()
+  WaitKey(pygame.K_RETURN)
   return hlist
 
 
 def AddNewScore(WIN, pos, score):
   WIN.fill(BLACK)
+  for event in pygame.event.get():
+    pass # Clean queue
   hlist = ReadHFile(hfilename)
   hlist = NewScore(WIN, pos, hlist, score)
   WriteHFile(hfilename, hlist)
 
 # --------------------------------------------- #
 
-"""
-pygame.mixer.init()
+if __name__ == '__main__':
+  pygame.mixer.init()
+  hfilename = "hsl_test.txt"
 
-WIN_WIDTH, WIN_HEIGHT = 600, 500
-WIN1 = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+  WIN_WIDTH, WIN_HEIGHT = 600, 500
+  WIN1 = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 
-AddNewScore(WIN1, (100, 20), random.randint(10, 2000))
-pygame.quit()
-"""
+  AddNewScore(WIN1, (100, 20), random.randint(10, 2000))
+  pygame.quit()
 
