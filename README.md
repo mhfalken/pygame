@@ -1,25 +1,25 @@
 # pygame
 
-## Install pygame
+## Install Python
 Download Python https://www.python.org/downloads/ and install it.
 
-Install pygame:  
-Windows: from Windows command prompt
+### Install pygame
+Windows: Windows PowerShell
 ```
 py -m pip install -U pygame --user
 ```
-MAC: from Terminal window prompt
+MAC: Terminal
 ```
 pip3 install pygame 
 ```
 ## Start pygame game
-Windows:  
+Windows: Windows PowerShell
 ```
-python <filename>
+python <python-file>
 ```
-MAC:
+MAC: Terminal
 ```
-python3 <filename>
+python3 <python-file>
 ```
 
 ## pygame start file
