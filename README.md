@@ -1,5 +1,8 @@
 # pygame
 
+* pygame.pdf  
+pygame guide på dansk, som beskriver hvordan man laver et simpelt Space Invaders game. Kendskab til Python er en fordel.  
+
 ## Install Python
 Download Python https://www.python.org/downloads/ and install it.
 
