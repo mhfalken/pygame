@@ -82,7 +82,11 @@ def main():
   aliens = []
   ufos = []
   explosions = []
-  shieldCnt += 1
+  if level < 5:
+    shieldCnt += 1
+  elif level % 2 == 0:
+    shieldCnt += 1
+
   shieldActive = 0
   shieldHit = 0
 
@@ -294,7 +298,7 @@ def main():
 
     pygame.display.update()
 
-    if score >= scoreNextShip:
+    if score >= scoreNextShip and len(ships) < 4:
       scoreNextShip += 1000
       NEW_SHIP_SOUND.play()
       shieldActive += FPS/2
