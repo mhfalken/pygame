@@ -1,5 +1,5 @@
 # Standard control loop in pygame
-# Made by Michael Hansen 2021/22
+# Made by Michael Hansen 2021-23
 import pygame
 import os
 import random
@@ -18,9 +18,11 @@ FPS = 60
 WIN_WIDTH, WIN_HEIGHT = 600, 500
 WIN = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 
+SHIP_WIDTH = 20
+SHIP_HEIGHT = 20
 
 def main():
-  ship = pygame.Rect(200, 300, 20, 5)
+  ship = pygame.Rect(200, 300, SHIP_WIDTH, SHIP_HEIGHT)
   clock = pygame.time.Clock()
   run = True
   while run:
